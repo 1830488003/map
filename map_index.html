@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>恋爱冒险地图</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=ZCOOL+QingKe+HuangYou&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="map_styles.css">
+    <link rel="stylesheet" href="map_ui_styles.css">
+</head>
+<body>
+    <!-- Placeholder for map data, potentially loaded via JS or another mechanism -->
+    <div id="map-data-source" style="display:none;">$1</div>
+
+    <div class="map-interface">
+        <div class="map-header">
+            <h2 id="map-title">通用地图导航</h2>
+            <div class="header-buttons">
+                <button id="shop-toggle-btn" class="header-action-button" title="打开商店">
+                    <i class="fas fa-store"></i>
+                </button>
+                <button id="inventory-toggle-btn" class="header-action-button" title="打开背包">
+                    <i class="fas fa-briefcase"></i>
+                </button>
+                <button id="bullet-chat-toggle-btn" class="header-action-button bullet-chat-toggle-btn" title="弹幕开关">
+                    <i class="fas fa-comment-dots"></i>
+                </button>
+                <button id="settings-toggle-btn" class="header-action-button settings-toggle-button" title="打开设置">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Bullet Chat Container -->
+        <div id="bullet-chat-container" class="bullet-chat-container hidden">
+            <div class="bullet-chat-header" id="bullet-chat-header">
+                <i class="fas fa-comment-alt"></i> 剧情弹幕
+                <button id="bullet-close-btn" class="bullet-close-btn" title="关闭弹幕"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="bullet-chat-content" id="bullet-chat-content">
+                <!-- Bullet comments will be added here -->
+            </div>
+            <div class="bullet-reply-area">
+                <input type="text" id="bullet-reply-input" placeholder="与弹幕对话...">
+                <button id="bullet-send-btn" title="发送">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="current-conversation-partners" class="current-partners-section hidden">
+             <div class="section-title"><i class="fas fa-comments"></i> 当前交谈中</div>
+             <div id="partner-buttons" class="partner-button-list">
+                 <!-- Partner buttons added by JS -->
+             </div>
+        </div>
+
+        <div id="movement-alert" class="movement-alert hidden">
+            <i class="fas fa-exclamation-triangle"></i> 提示：你现在无法移动
+        </div>
+
+        <div id="main-locations" class="location-grid">
+            <!-- Visual Map Area -->
+            <div id="visual-map-container">
+                <svg id="visual-map" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                    <!-- SVG map elements will be added here by JavaScript -->
+                </svg>
+                <div class="map-tooltip" id="map-tooltip">Tooltip</div>
+            </div>
+        </div>
+
+        <div class="switch-area-section">
+             <button id="switch-area-button" class="switch-area-button hidden">
+                 <i class="fas fa-globe-asia"></i> 切换大区域
+             </button>
+        </div>
+
+        <div id="sub-locations" class="sub-location-grid hidden">
+            <!-- Sub-location buttons added by JS -->
+        </div>
+
+        <div id="location-details" class="location-details hidden">
+            <div class="detail-header">
+                <i class="fas fa-map-marker-alt"></i> <span id="selected-location">未选择</span>
+            </div>
+            <div class="detail-content">
+                <div class="character-section">
+                    <div class="section-title"><i class="fas fa-users"></i> 可能遇见的人</div>
+                    <div id="location-characters" class="character-list">
+                        <!-- Character items added by JS -->
+                    </div>
+                </div>
+            </div>
+            <div class="action-section">
+                <button id="action-btn" class="action-button" disabled>
+                    <i class="fas fa-map-signs"></i> 选择地点
+                </button>
+            </div>
+        </div>
+
+        <div id="game-actions-section" class="game-actions-section">
+            <!-- Game action buttons remain here -->
+            <button id="action-wait-moment" class="game-action-button"><i class="fas fa-hourglass-start"></i> 等待片刻</button>
+            <button id="action-wait-hour" class="game-action-button"><i class="fas fa-hourglass-half"></i> 等待1小时</button>
+            <button id="action-skip-timeblock" class="game-action-button"><i class="fas fa-forward"></i> 跳到下时段</button>
+            <button id="action-skip-day" class="game-action-button"><i class="fas fa-calendar-day"></i> 快进到明天</button>
+            <button id="action-skip-weekend" class="game-action-button"><i class="fas fa-calendar-week"></i> 快进到周末</button>
+            <button id="action-skip-date" class="game-action-button"><i class="fas fa-calendar-alt"></i> 快进到日期</button>
+            <button id="action-skip-plot" class="game-action-button"><i class="fas fa-fast-forward"></i> 跳过剧情</button>
+            <button id="action-end-activity" class="game-action-button"><i class="fas fa-stop-circle"></i> 结束活动</button>
+            <button id="action-initiate-talk" class="game-action-button"><i class="fas fa-comment-dots"></i> 发起对话</button>
+            <button id="action-ask-info" class="game-action-button"><i class="fas fa-question-circle"></i> 询问信息</button>
+            <button id="action-observe-char" class="game-action-button"><i class="fas fa-eye"></i> 观察对方</button>
+            <button id="action-give-gift" class="game-action-button"><i class="fas fa-gift"></i> 赠送礼物</button>
+            <button id="action-make-request" class="game-action-button"><i class="fas fa-hand-holding-heart"></i> 提出请求</button>
+            <button id="action-invite-join" class="game-action-button"><i class="fas fa-user-plus"></i> 邀请同行</button>
+            <button id="action-ask-date" class="game-action-button"><i class="fas fa-heart"></i> 邀请约会</button>
+            <button id="action-date-interact" class="game-action-button"><i class="fas fa-glass-cheers"></i> 约会互动</button>
+            <button id="action-flirt" class="game-action-button"><i class="fas fa-grin-wink"></i> 调情</button>
+            <button id="action-hold-hands" class="game-action-button"><i class="fas fa-hand-holding"></i> 牵手</button>
+            <button id="action-hug" class="game-action-button"><i class="fas fa-child-reaching"></i> 拥抱</button>
+            <button id="action-kiss" class="game-action-button"><i class="fas fa-kiss-wink-heart"></i> 亲吻</button>
+            <button id="action-comfort" class="game-action-button"><i class="fas fa-hand-holding-medical"></i> 安慰对方</button>
+            <button id="action-apologize" class="game-action-button"><i class="fas fa-praying-hands"></i> 道歉</button>
+            <button id="action-thank" class="game-action-button"><i class="fas fa-thumbs-up"></i> 感谢</button>
+            <button id="action-goodbye" class="game-action-button"><i class="fas fa-sign-out-alt"></i> 告别</button>
+            <button id="action-call" class="game-action-button"><i class="fas fa-phone"></i> 打电话</button>
+            <button id="action-send-message" class="game-action-button"><i class="fas fa-envelope"></i> 发消息</button>
+            <button id="action-check-relation" class="game-action-button"><i class="fas fa-users"></i> 查看关系</button>
+            <button id="action-check-inventory" class="game-action-button"><i class="fas fa-briefcase"></i> 查看背包</button>
+            <button id="action-use-item" class="game-action-button"><i class="fas fa-hand-sparkles"></i> 使用物品</button>
+            <button id="action-equip-item" class="game-action-button"><i class="fas fa-tshirt"></i> 装备物品</button>
+            <button id="action-buy-item" class="game-action-button"><i class="fas fa-shopping-cart"></i> 购买物品</button>
+            <button id="action-sell-item" class="game-action-button"><i class="fas fa-dollar-sign"></i> 出售物品</button>
+            <button id="action-examine-env" class="game-action-button"><i class="fas fa-search-location"></i> 检查环境</button>
+            <button id="action-interact-object" class="game-action-button"><i class="fas fa-hand-pointer"></i> 与物互动</button>
+            <button id="action-check-status" class="game-action-button"><i class="fas fa-id-card"></i> 查看状态</button>
+            <button id="action-work" class="game-action-button"><i class="fas fa-briefcase"></i> 工作</button>
+            <button id="action-study" class="game-action-button"><i class="fas fa-book-reader"></i> 学习</button>
+            <button id="action-relax" class="game-action-button"><i class="fas fa-couch"></i> 休息放松</button>
+            <button id="action-check-map" class="game-action-button"><i class="fas fa-map-marked-alt"></i> 查看地图</button>
+            <button id="action-check-quests" class="game-action-button"><i class="fas fa-tasks"></i> 查看任务</button>
+            <button id="action-save-game" class="game-action-button"><i class="fas fa-save"></i> 保存游戏</button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="confirm-overlay" class="modal-overlay hidden">
+        <div class="confirm-dialog">
+            <h4 id="confirm-title">确认操作</h4>
+            <p id="confirm-message"></p>
+            <div class="dialog-buttons">
+                <button id="cancel-action-btn" class="dialog-button cancel-button">
+                    <i class="fas fa-times"></i> 再想想
+                </button>
+                <button id="execute-action-btn" class="dialog-button confirm-button">
+                    <i class="fas fa-check"></i> 确定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="character-modal" class="modal-overlay hidden">
+        <div class="character-modal-dialog">
+            <button id="close-modal-btn" class="close-modal-button">&times;</button>
+            <h4 id="modal-character-name">角色名称</h4>
+            <div id="modal-character-description" class="modal-description-content">
+                <!-- Description added by JS -->
+            </div>
+            <div id="modal-interaction-options" class="interaction-options-grid">
+                <!-- Interaction buttons added by JS -->
+            </div>
+            <div id="modal-custom-input-area" class="custom-input-area">
+                <input type="text" id="custom-interaction-input" placeholder="输入你想说的话...">
+                <button id="send-custom-interaction-btn" class="custom-send-button">
+                    <i class="fas fa-paper-plane"></i> 发送
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="shop-modal" class="modal-overlay hidden">
+        <div class="shop-modal-dialog modal-dialog">
+            <button id="close-shop-modal-btn" class="close-modal-button">&times;</button>
+            <h4 class="modal-title"><i class="fas fa-store"></i> 商店</h4>
+            <div class="shop-player-info">
+                <span class="shop-money-label">金币: <i class="fas fa-coins"></i></span>
+                <span id="shop-player-money">0</span>
+            </div>
+            <div id="shop-item-list" class="shop-item-list modal-content-area">
+                <!-- Shop items added by JS -->
+            </div>
+        </div>
+    </div>
+
+    <div id="inventory-modal" class="modal-overlay hidden">
+        <div class="inventory-modal-dialog modal-dialog">
+            <button id="close-inventory-modal-btn" class="close-modal-button">&times;</button>
+            <h4 class="modal-title"><i class="fas fa-briefcase"></i> 背包</h4>
+            <div id="inventory-item-list" class="inventory-item-list modal-content-area">
+                <!-- Inventory items added by JS -->
+            </div>
+            <div id="inventory-item-details" class="inventory-item-details hidden">
+                 <h5 id="item-detail-name">物品名称</h5>
+                 <p id="item-detail-desc">物品描述</p>
+                 <div id="item-detail-actions" class="item-actions-grid">
+                     <!-- Item actions added by JS -->
+                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Panel HTML -->
+    <div id="settings-panel" class="settings-panel hidden">
+        <div class="settings-panel-content">
+            <div class="settings-header">
+                <h3><i class="fas fa-sliders-h"></i> 显示设置</h3>
+                <button id="settings-close-btn" class="settings-close-button">&times;</button>
+            </div>
+            <div class="settings-content">
+                <div class="setting-item">
+                    <label for="font-style-select">字体样式:</label>
+                    <select id="font-style-select">
+                        <option value='"ZCOOL XiaoWei", "Microsoft YaHei", sans-serif'>造字工房小薇体 (推荐)</option>
+                        <option value='"SimSun", "宋体", serif'>宋体 (SimSun)</option>
+                        <option value='"SimHei", "黑体", sans-serif'>黑体 (SimHei)</option>
+                        <option value='"Microsoft YaHei", "微软雅黑", sans-serif'>微软雅黑</option>
+                        <option value='"KaiTi", "楷体", "STKaiti", serif'>楷体 (KaiTi)</option>
+                        <option value='"FangSong", "仿宋", "STFangsong", serif'>仿宋 (FangSong)</option>
+                        <option value='"NSimSun", "新宋体", serif'>新宋体 (NSimSun)</option>
+                        <option value='"PingFang SC", "苹方 SC", sans-serif'>苹方 SC</option>
+                        <option value='"Source Han Sans CN", "思源黑体 CN", sans-serif'>思源黑体 CN</option>
+                        <option value='"Source Han Serif CN", "思源宋体 CN", serif'>思源宋体 CN</option>
+                        <option value='"WenQuanYi Micro Hei", "文泉驿微米黑", sans-serif'>文泉驿微米黑</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="title-font-style-select">标题字体:</label>
+                    <select id="title-font-style-select">
+                        <option value='"ZCOOL QingKe HuangYou", "Microsoft YaHei", sans-serif'>造字工房青刻黄油体 (推荐)</option>
+                        <option value='"SimHei", "黑体", sans-serif'>黑体 (SimHei)</option>
+                        <option value='"Microsoft YaHei", "微软雅黑", sans-serif'>微软雅黑</option>
+                        <option value='"FZDaHei-B02", "方正大黑", sans-serif'>方正大黑</option>
+                        <option value='"FZShuTi", "方正舒体", serif'>方正舒体</option>
+                        <option value='"FZYaoti", "方正姚体", serif'>方正姚体</option>
+                        <option value='"STHupo", "华文琥珀", serif'>华文琥珀</option>
+                        <option value='"Source Han Sans CN", "思源黑体 CN", sans-serif'>思源黑体 CN</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="font-size-slider">字体大小:</label>
+                    <input type="range" id="font-size-slider" min="10" max="20" value="13" step="1">
+                    <span id="font-size-value">13px</span>
+                </div>
+                <div class="setting-item">
+                    <label for="font-color-picker">字体颜色:</label>
+                    <input type="color" id="font-color-picker" value="#e6e6e6">
+                </div>
+                <div class="setting-item">
+                    <label for="ui-color-picker">UI 主色:</label>
+                    <input type="color" id="ui-color-picker" value="#e8a85e">
+                </div>
+                 <div class="setting-item">
+                    <label for="ui-bg-color-picker">UI 背景色:</label>
+                    <input type="color" id="ui-bg-color-picker" value="#2c313a">
+                </div>
+                 <div class="setting-item">
+                    <label for="button-color-picker">按钮主色:</label>
+                    <input type="color" id="button-color-picker" value="#7cb342">
+                </div>
+                <div class="setting-item">
+                     <label for="shadow-toggle">启用阴影:</label>
+                     <input type="checkbox" id="shadow-toggle" checked>
+                 </div>
+                 <div class="setting-item">
+                     <label for="quick-commands-toggle">显示快捷指令:</label>
+                     <input type="checkbox" id="quick-commands-toggle" checked>
+                 </div>
+                 <div class="setting-item">
+                     <label for="bullet-chat-toggle">显示弹幕:</label>
+                     <input type="checkbox" id="bullet-chat-toggle" checked>
+                 </div>
+                <div class="setting-separator"></div>
+                <div class="setting-item preset-section-title">
+                     <label>预设方案:</label>
+                     <span></span>
+                </div>
+                <div id="preset-schemes-container" class="preset-schemes-grid">
+                    <!-- Preset buttons added by JS -->
+                </div>
+            </div>
+            <div class="settings-actions">
+                <button id="settings-apply-btn" class="settings-action-button apply">
+                    <i class="fas fa-check"></i> 应用
+                </button>
+                <button id="settings-reset-btn" class="settings-action-button reset">
+                    <i class="fas fa-undo"></i> 重置
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Scripts -->
+    <script src="map_utils.js"></script>
+    <script src="map_data_handler.js"></script>
+    <script src="map_selection.js"></script>
+    <script src="map_actions.js"></script>
+    <script src="map_modals.js"></script>
+    <script src="map_settings.js"></script>
+    <script src="map_shop_inventory.js"></script>
+    <script src="map_bullet_chat.js"></script>
+    <script src="map_init.js"></script> <!-- Must be last -->
+
+</body>
+</html>
